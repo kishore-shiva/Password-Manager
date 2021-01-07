@@ -43,12 +43,19 @@ class SignInDemoState extends State<SignInDemo> {
   TextEditingController websiteText = new TextEditingController();
   TextEditingController username = new TextEditingController();
   TextEditingController password = new TextEditingController();
+  TextEditingController additionalinformation = new TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  String userMail;
 
-  void addData() {
-    _firestore
-        .collection('Kishore shiva')
-        .add({'name': "Kishore shiva", "Contacts": 0});
+  void addData(String websiteName, String username, String password,
+      String mail, String additional) {
+    _firestore.collection(userMail).add({
+      'website/account name': websiteName,
+      'username/card No': username,
+      'password/PIN': password,
+      'mail-id': mail,
+      'additional details': additional
+    });
   }
 
   @override
@@ -58,10 +65,13 @@ class SignInDemoState extends State<SignInDemo> {
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount account) {
       setState(() {
         _currentUser = account;
+        userMail = _currentUser.email;
+        print('-------------------user is : ' +
+            userMail +
+            '---------------------');
       });
     });
     _googleSignIn.signInSilently();
-    addData();
     loading = false;
     showModal = false;
   }
@@ -74,7 +84,12 @@ class SignInDemoState extends State<SignInDemo> {
     }
   }
 
-  Future<void> _handleSignOut() => _googleSignIn.disconnect();
+  Future<void> _handleSignOut() {
+    setState(() {
+      _currentUser = null;
+      _googleSignIn.disconnect();
+    });
+  }
 
   // To sign in: _handleSignIn, sign out: _handleSignOut, referesh: _handleGetContact
 
@@ -164,7 +179,7 @@ class SignInDemoState extends State<SignInDemo> {
                                       initialValue: null,
                                       validator: (value) {
                                         if (value.isEmpty) {
-                                          return "Website Name is required!";
+                                          return "Website/Account Name is required!";
                                         } else
                                           return null;
                                       },
@@ -190,7 +205,8 @@ class SignInDemoState extends State<SignInDemo> {
                                     child: TextFormField(
                                       initialValue: null,
                                       validator: (value) {
-                                        if (EmailValidator.validate(value)) {
+                                        if (EmailValidator.validate(value) ||
+                                            value.isEmpty) {
                                           return null;
                                         } else {
                                           return "Enter email in proper format!";
@@ -230,7 +246,7 @@ class SignInDemoState extends State<SignInDemo> {
                                       decoration: InputDecoration(
                                         contentPadding:
                                             EdgeInsets.fromLTRB(12, 10, 0, 0),
-                                        labelText: "Username",
+                                        labelText: "Username/Account No",
                                         hintText: "Enter here",
                                         border: OutlineInputBorder(
                                             borderRadius:
@@ -258,7 +274,26 @@ class SignInDemoState extends State<SignInDemo> {
                                       decoration: InputDecoration(
                                         contentPadding:
                                             EdgeInsets.fromLTRB(12, 10, 0, 0),
-                                        labelText: "Password",
+                                        labelText: "Password/PIN",
+                                        hintText: "Enter here",
+                                        border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                            borderSide: new BorderSide(
+                                                color: Colors.blue)),
+                                      ),
+                                    )),
+                                Container(
+                                    height: 150,
+                                    child: TextFormField(
+                                      initialValue: null,
+                                      maxLines: 8,
+                                      controller: additionalinformation,
+                                      cursorColor: Colors.blue,
+                                      decoration: InputDecoration(
+                                        contentPadding:
+                                            EdgeInsets.fromLTRB(12, 10, 0, 20),
+                                        labelText: "Additional Information",
                                         hintText: "Enter here",
                                         border: OutlineInputBorder(
                                             borderRadius:
@@ -275,6 +310,12 @@ class SignInDemoState extends State<SignInDemo> {
                               onPressed: () {
                                 if (_formKey.currentState.validate()) {
                                   print("form validated");
+                                  addData(
+                                      websiteText.text,
+                                      username.text,
+                                      password.text,
+                                      emailController.text,
+                                      additionalinformation.text);
                                   Navigator.pop(context);
                                 } else {
                                   print("form invalid");
