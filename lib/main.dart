@@ -253,12 +253,12 @@ class SignInDemoState extends State<SignInDemo> {
                 height: 65,
                 width: MediaQuery.of(context).size.width,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     GoogleUserCircleAvatar(identity: _currentUser),
                     Container(
-                      margin: EdgeInsets.fromLTRB(5, 5, 0, 0),
+                      margin: EdgeInsets.fromLTRB(0, 5, 0, 0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,7 +270,8 @@ class SignInDemoState extends State<SignInDemo> {
                           ),
                           Text(_currentUser.email,
                               style: TextStyle(
-                                  color: Colors.black.withOpacity(0.5)))
+                                  color: Colors.black.withOpacity(0.5),
+                                  fontSize: 12))
                         ],
                       ),
                     ),
