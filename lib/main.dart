@@ -3,6 +3,7 @@ import 'dart:convert' show json;
 
 import 'package:expandable/expandable.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import "package:http/http.dart" as http;
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 GoogleSignIn _googleSignIn = GoogleSignIn(
   scopes: <String>[
@@ -23,7 +25,8 @@ void main() {
   runApp(
     MaterialApp(
       title: "Kishore's Password Manager",
-      theme: ThemeData(primaryColor: Colors.blue, highlightColor: Colors.white),
+      theme:
+          ThemeData(primaryColor: Colors.blue, highlightColor: Colors.orange),
       home: SignInDemo(),
     ),
   );
@@ -45,14 +48,16 @@ class SignInDemoState extends State<SignInDemo> {
   TextEditingController username = new TextEditingController();
   TextEditingController password = new TextEditingController();
   TextEditingController additionalinformation = new TextEditingController();
+  final ScrollController _scrollController = new ScrollController();
+  static const IconData delete = IconData(0xe6a1, fontFamily: 'MaterialIcons');
+  static const IconData edit = IconData(0xe6e5, fontFamily: 'MaterialIcons');
 
   List<Widget> accountsContainer = [];
   final _formKey = GlobalKey<FormState>();
-  String userMail;
 
   void addData(String websiteName, String username, String password,
       String mail, String additional) {
-    _firestore.collection(userMail).add({
+    _firestore.collection(_currentUser.email).add({
       'website/account name': websiteName,
       'username/card No': username,
       'password/PIN': password,
@@ -73,15 +78,282 @@ class SignInDemoState extends State<SignInDemo> {
             ),
             borderRadius: BorderRadius.all(Radius.circular(10))),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              a['website/account name'],
-              style: TextStyle(
-                fontSize: 24,
-                color: Colors.white,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 0.55 * MediaQuery.of(context).size.width,
+                  child: Text(
+                    a['website/account name'],
+                    style: TextStyle(
+                      fontSize: 24,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                Container(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        child: IconButton(
+                            color: Colors.white,
+                            icon: Icon(
+                              edit,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              print('this');
+                              websiteText = null;
+                              emailController = null;
+                              username = null;
+                              password = null;
+                              additionalinformation = null;
+                              Alert(
+                                  context: context,
+                                  title: "Edit Account Details",
+                                  content: Form(
+                                    key: _formKey,
+                                    child: Column(
+                                      children: <Widget>[
+                                        SizedBox(
+                                          height: 10,
+                                        ),
+                                        Container(
+                                            height: 65,
+                                            child: TextFormField(
+                                              initialValue:
+                                                  a['website/account name'],
+                                              validator: (value) {
+                                                if (value.isEmpty) {
+                                                  return "Website/Account Name is required!";
+                                                } else
+                                                  return null;
+                                              },
+                                              controller: websiteText,
+                                              cursorColor: Colors.blue,
+                                              decoration: InputDecoration(
+                                                contentPadding:
+                                                    EdgeInsets.fromLTRB(
+                                                        12, 10, 0, 0),
+                                                labelText:
+                                                    "Website/Account name",
+                                                hintText: "Enter here",
+                                                border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                    borderSide: new BorderSide(
+                                                        color: Colors.blue)),
+                                              ),
+                                            )),
+                                        SizedBox(
+                                          height: 10,
+                                        ),
+                                        Container(
+                                            height: 65,
+                                            child: TextFormField(
+                                              initialValue: a['mail-id'],
+                                              validator: (value) {
+                                                if (EmailValidator.validate(
+                                                        value) ||
+                                                    value.isEmpty) {
+                                                  return null;
+                                                } else {
+                                                  return "Enter email in proper format!";
+                                                }
+                                              },
+                                              controller: emailController,
+                                              keyboardType:
+                                                  TextInputType.emailAddress,
+                                              cursorColor: Colors.blue,
+                                              decoration: InputDecoration(
+                                                contentPadding:
+                                                    EdgeInsets.fromLTRB(
+                                                        12, 10, 0, 0),
+                                                labelText: "Associated Mail-Id",
+                                                hintText: "Enter here",
+                                                border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                    borderSide: new BorderSide(
+                                                        color: Colors.blue)),
+                                              ),
+                                            )),
+                                        SizedBox(
+                                          height: 10,
+                                        ),
+                                        Container(
+                                            height: 65,
+                                            child: TextFormField(
+                                              initialValue:
+                                                  a['username/card No'],
+                                              validator: (value) {
+                                                if (value.isEmpty) {
+                                                  return "Username is required!";
+                                                } else {
+                                                  return null;
+                                                }
+                                              },
+                                              controller: username,
+                                              cursorColor: Colors.blue,
+                                              decoration: InputDecoration(
+                                                contentPadding:
+                                                    EdgeInsets.fromLTRB(
+                                                        12, 10, 0, 0),
+                                                labelText:
+                                                    "Username/Account No",
+                                                hintText: "Enter here",
+                                                border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                    borderSide: new BorderSide(
+                                                        color: Colors.blue)),
+                                              ),
+                                            )),
+                                        SizedBox(
+                                          height: 10,
+                                        ),
+                                        Container(
+                                            height: 65,
+                                            child: TextFormField(
+                                              initialValue: a['password/PIN'],
+                                              validator: (value) {
+                                                if (value.isEmpty) {
+                                                  return "Password required!";
+                                                } else {
+                                                  return null;
+                                                }
+                                              },
+                                              controller: password,
+                                              cursorColor: Colors.blue,
+                                              decoration: InputDecoration(
+                                                contentPadding:
+                                                    EdgeInsets.fromLTRB(
+                                                        12, 10, 0, 0),
+                                                labelText: "Password/PIN",
+                                                hintText: "Enter here",
+                                                border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                    borderSide: new BorderSide(
+                                                        color: Colors.blue)),
+                                              ),
+                                            )),
+                                        Container(
+                                            height: 150,
+                                            child: TextFormField(
+                                              initialValue:
+                                                  a['additional details'],
+                                              maxLines: 8,
+                                              controller: additionalinformation,
+                                              cursorColor: Colors.blue,
+                                              decoration: InputDecoration(
+                                                contentPadding:
+                                                    EdgeInsets.fromLTRB(
+                                                        12, 10, 0, 20),
+                                                labelText:
+                                                    "Additional Information",
+                                                hintText: "Enter here",
+                                                border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                    borderSide: new BorderSide(
+                                                        color: Colors.blue)),
+                                              ),
+                                            ))
+                                      ],
+                                    ),
+                                  ),
+                                  buttons: [
+                                    DialogButton(
+                                      onPressed: () {
+                                        if (_formKey.currentState.validate()) {
+                                          print("form validated");
+                                          addData(
+                                              websiteText.text,
+                                              username.text,
+                                              password.text,
+                                              emailController.text,
+                                              additionalinformation.text);
+                                          Navigator.pop(context);
+                                        } else {
+                                          print("form invalid");
+                                        }
+                                      },
+                                      child: Text(
+                                        "SAVE CHANGES",
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    )
+                                  ]).show();
+                            }),
+                      ),
+                      Container(
+                        child: IconButton(
+                          onPressed: () {
+                            print("this");
+                            //deleteDocument(a['website/account name']);
+                            //showData(userMail);
+                            showDialog(
+                              context: context,
+                              child: new AlertDialog(
+                                title: const Text("Delete Account"),
+                                content: const Text(
+                                    "Are you sure want to delete this account and its details ?"),
+                                actions: [
+                                  new FlatButton(
+                                    child: const Text(
+                                      "Yes",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                    onPressed: () {
+                                      deleteDocument(a['website/account name']);
+                                      showData(_currentUser.email);
+                                      Fluttertoast.showToast(
+                                          msg: "Account deleted successfully !",
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.CENTER,
+                                          timeInSecForIosWeb: 1,
+                                          backgroundColor: Colors.orange,
+                                          textColor: Colors.white,
+                                          fontSize: 16.0);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  new FlatButton(
+                                    child: const Text(
+                                      "No",
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          icon: Icon(
+                            delete,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             SizedBox(
               height: 5,
@@ -94,7 +366,7 @@ class SignInDemoState extends State<SignInDemo> {
                   "Username/card No : ",
                   style: TextStyle(color: Colors.white),
                 ),
-                Text(
+                SelectableText(
                   a['username/card No'],
                   style: TextStyle(
                       color: Colors.white,
@@ -161,7 +433,7 @@ class SignInDemoState extends State<SignInDemo> {
                     "Mail-Id : ",
                     style: TextStyle(fontSize: 14),
                   ),
-                  Text(
+                  SelectableText(
                     a['mail-id'],
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   )
@@ -176,10 +448,10 @@ class SignInDemoState extends State<SignInDemo> {
             child: Row(
               children: [
                 Text(
-                  "password/PIN : ",
+                  "Password/PIN : ",
                   style: TextStyle(fontSize: 14),
                 ),
-                Text(
+                SelectableText(
                   a['password/PIN'],
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 )
@@ -190,15 +462,24 @@ class SignInDemoState extends State<SignInDemo> {
         : texts.add(Container(
             margin: EdgeInsets.fromLTRB(0, 2, 0, 0),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "additional details : ",
+                  "Additional details : ",
                   style: TextStyle(fontSize: 14),
                 ),
-                Text(
-                  a['additional details'],
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                )
+                Container(
+                  width: 0.52 * MediaQuery.of(context).size.width,
+                  child: Text(
+                    a['additional details'],
+                    maxLines: 10,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ],
             )));
 
@@ -209,19 +490,46 @@ class SignInDemoState extends State<SignInDemo> {
   void initState() {
     loading = true;
     super.initState();
+    loading = true;
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount account) {
       setState(() {
         _currentUser = account;
-        userMail = _currentUser.email;
         print('-------------------user is : ' +
-            userMail +
+            _currentUser.email +
             '---------------------');
-        showData(userMail);
+        showData(_currentUser.email);
       });
     });
     _googleSignIn.signInSilently();
     loading = false;
     showModal = false;
+  }
+
+  void showIDs() async {
+    final messages = await _firestore
+        .collection(_currentUser.email)
+        .getDocuments()
+        .catchError((e) {
+      print('-------------------------Error from firestore: ' +
+          e +
+          '----------------------------');
+    });
+    for (var message in messages.documents) {
+      print('_________________Document ID is :' + message.documentID);
+    }
+  }
+
+  void deleteDocument(String websiteName) async {
+    final messages =
+        await _firestore.collection(_currentUser.email).getDocuments();
+    for (var message in messages.documents) {
+      if (message.data['website/account name'] == websiteName) {
+        _firestore
+            .collection(_currentUser.email)
+            .document(message.documentID)
+            .delete();
+      }
+    }
   }
 
   Future<void> _handleSignIn() async {
@@ -243,6 +551,7 @@ class SignInDemoState extends State<SignInDemo> {
 
   Widget _buildBody() {
     if (_currentUser != null) {
+      loading = false;
       return Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
@@ -279,17 +588,16 @@ class SignInDemoState extends State<SignInDemo> {
                       width: 10,
                     ),
                     RaisedButton(
-                      highlightColor: Colors.blueGrey,
-                      color: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(40.0),
-                      ),
-                      child: const Text(
-                        'SIGN OUT',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      onPressed: _handleSignOut,
-                    ),
+                        highlightColor: Colors.blueGrey,
+                        color: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(40.0),
+                        ),
+                        child: const Text(
+                          'SIGN OUT',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        onPressed: _handleSignOut),
                   ],
                 ),
               ),
@@ -308,10 +616,11 @@ class SignInDemoState extends State<SignInDemo> {
                   RaisedButton(
                     highlightColor: Colors.blueGrey,
                     onPressed: () {
-                      websiteText.clear();
-                      emailController.clear();
-                      username.clear();
-                      password.clear();
+                      websiteText = new TextEditingController();
+                      emailController = new TextEditingController();
+                      username = new TextEditingController();
+                      password = new TextEditingController();
+                      additionalinformation = new TextEditingController();
                       Alert(
                           context: context,
                           title: "Enter Account Details",
@@ -509,10 +818,34 @@ class SignInDemoState extends State<SignInDemo> {
                   ),
                 ],
               )),
-          Column(
-            children: (accountsContainer.length == 0)
-                ? [Text("accounts container is empty")]
-                : accountsContainer,
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: MediaQuery.of(context).size.width - 4,
+                  margin: EdgeInsets.fromLTRB(0, 10, 0, 0),
+                  child: Scrollbar(
+                    isAlwaysShown: true,
+                    controller: _scrollController,
+                    radius: Radius.circular(10),
+                    thickness: 4,
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      scrollDirection: Axis.vertical,
+                      child: Column(
+                        children: (accountsContainer.length == 0)
+                            ? [Text("accounts container is empty")]
+                            : accountsContainer,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 2,
+                ),
+              ],
+            ),
           ),
         ],
       );
