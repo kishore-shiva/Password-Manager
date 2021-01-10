@@ -39,16 +39,25 @@ dependencies:
   email_validator: '^1.0.0'
   expandable: ^4.1.4
   fluttertoast: ^7.1.6
+  flutter_signin_button: ^1.1.0
+  font_awesome_flutter: ^8.11.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter.
 flutter:
+  fonts:
+      - family:  MyFlutterApp
+        fonts:
+         - asset: assets/icon/MyFlutterApp.ttf
+  assets:
+    - assets/icon/google_logo.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

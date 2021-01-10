@@ -1,19 +1,17 @@
 import 'dart:async';
-import 'dart:convert' show json;
-
 import 'package:expandable/expandable.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-import "package:http/http.dart" as http;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
+import 'package:password_manager/assets/icon/my_flutter_app_icons.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter_signin_button/flutter_signin_button.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 GoogleSignIn _googleSignIn = GoogleSignIn(
   scopes: <String>[
@@ -58,9 +56,9 @@ class SignInDemoState extends State<SignInDemo> {
   void addData(String websiteName, String username, String password,
       String mail, String additional) {
     _firestore.collection(_currentUser.email).add({
-      'website/account name': websiteName,
-      'username/card No': username,
-      'password/PIN': password,
+      'website or account name': websiteName,
+      'username or card No': username,
+      'password or PIN': password,
       'mail-id': mail,
       'additional details': additional
     });
@@ -87,7 +85,7 @@ class SignInDemoState extends State<SignInDemo> {
                 Container(
                   width: 0.55 * MediaQuery.of(context).size.width,
                   child: Text(
-                    a['website/account name'],
+                    a['website or account name'],
                     style: TextStyle(
                       fontSize: 24,
                       color: Colors.white,
@@ -107,11 +105,12 @@ class SignInDemoState extends State<SignInDemo> {
                             ),
                             onPressed: () {
                               print('this');
-                              websiteText = null;
-                              emailController = null;
-                              username = null;
-                              password = null;
-                              additionalinformation = null;
+                              websiteText.text = a['website or account name'];
+                              emailController.text = a['mail-id'];
+                              username.text = a['username or card No'];
+                              password.text = a['password or PIN'];
+                              additionalinformation.text =
+                                  a['additional details'];
                               Alert(
                                   context: context,
                                   title: "Edit Account Details",
@@ -125,8 +124,7 @@ class SignInDemoState extends State<SignInDemo> {
                                         Container(
                                             height: 65,
                                             child: TextFormField(
-                                              initialValue:
-                                                  a['website/account name'],
+                                              initialValue: null,
                                               validator: (value) {
                                                 if (value.isEmpty) {
                                                   return "Website/Account Name is required!";
@@ -156,7 +154,7 @@ class SignInDemoState extends State<SignInDemo> {
                                         Container(
                                             height: 65,
                                             child: TextFormField(
-                                              initialValue: a['mail-id'],
+                                              initialValue: null,
                                               validator: (value) {
                                                 if (EmailValidator.validate(
                                                         value) ||
@@ -190,8 +188,7 @@ class SignInDemoState extends State<SignInDemo> {
                                         Container(
                                             height: 65,
                                             child: TextFormField(
-                                              initialValue:
-                                                  a['username/card No'],
+                                              initialValue: null,
                                               validator: (value) {
                                                 if (value.isEmpty) {
                                                   return "Username is required!";
@@ -222,7 +219,7 @@ class SignInDemoState extends State<SignInDemo> {
                                         Container(
                                             height: 65,
                                             child: TextFormField(
-                                              initialValue: a['password/PIN'],
+                                              initialValue: null,
                                               validator: (value) {
                                                 if (value.isEmpty) {
                                                   return "Password required!";
@@ -249,8 +246,7 @@ class SignInDemoState extends State<SignInDemo> {
                                         Container(
                                             height: 150,
                                             child: TextFormField(
-                                              initialValue:
-                                                  a['additional details'],
+                                              initialValue: null,
                                               maxLines: 8,
                                               controller: additionalinformation,
                                               cursorColor: Colors.blue,
@@ -277,12 +273,26 @@ class SignInDemoState extends State<SignInDemo> {
                                       onPressed: () {
                                         if (_formKey.currentState.validate()) {
                                           print("form validated");
-                                          addData(
-                                              websiteText.text,
-                                              username.text,
-                                              password.text,
-                                              emailController.text,
-                                              additionalinformation.text);
+                                          print(websiteText.text);
+                                          getDocumentId(websiteText.text).then(
+                                              (value) => _firestore
+                                                      .collection(
+                                                          _currentUser.email)
+                                                      .document(value)
+                                                      .updateData({
+                                                    'website or account name':
+                                                        websiteText.text,
+                                                    'mail-id':
+                                                        emailController.text,
+                                                    'password or PIN':
+                                                        password.text,
+                                                    'additional details':
+                                                        additionalinformation
+                                                            .text,
+                                                    'username or card No':
+                                                        username.text
+                                                  }));
+                                          print('document updated');
                                           Navigator.pop(context);
                                         } else {
                                           print("form invalid");
@@ -318,7 +328,8 @@ class SignInDemoState extends State<SignInDemo> {
                                       style: TextStyle(color: Colors.red),
                                     ),
                                     onPressed: () {
-                                      deleteDocument(a['website/account name']);
+                                      deleteDocument(
+                                          a['website or account name']);
                                       showData(_currentUser.email);
                                       Fluttertoast.showToast(
                                           msg: "Account deleted successfully !",
@@ -367,7 +378,7 @@ class SignInDemoState extends State<SignInDemo> {
                   style: TextStyle(color: Colors.white),
                 ),
                 SelectableText(
-                  a['username/card No'],
+                  a['username or card No'],
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -441,7 +452,7 @@ class SignInDemoState extends State<SignInDemo> {
               ),
             ),
           );
-    (a['password/PIN'].isEmpty)
+    (a['password or PIN'].isEmpty)
         ? null
         : texts.add(Container(
             margin: EdgeInsets.fromLTRB(0, 2, 0, 0),
@@ -452,7 +463,7 @@ class SignInDemoState extends State<SignInDemo> {
                   style: TextStyle(fontSize: 14),
                 ),
                 SelectableText(
-                  a['password/PIN'],
+                  a['password or PIN'],
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 )
               ],
@@ -523,13 +534,25 @@ class SignInDemoState extends State<SignInDemo> {
     final messages =
         await _firestore.collection(_currentUser.email).getDocuments();
     for (var message in messages.documents) {
-      if (message.data['website/account name'] == websiteName) {
+      if (message.data['website or account name'] == websiteName) {
         _firestore
             .collection(_currentUser.email)
             .document(message.documentID)
             .delete();
       }
     }
+  }
+  // The udpate function returns a String of the Document ID in which the data has to be updated:
+
+  Future<String> getDocumentId(String websiteName) async {
+    final messages =
+        await _firestore.collection(_currentUser.email).getDocuments();
+    for (var message in messages.documents) {
+      if (message.data['website or account name'] == websiteName) {
+        return message.documentID;
+      }
+    }
+    return "document not present";
   }
 
   Future<void> _handleSignIn() async {
@@ -851,14 +874,64 @@ class SignInDemoState extends State<SignInDemo> {
       );
     } else {
       loading = false;
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          RaisedButton(
-            child: const Text('SIGN IN'),
-            onPressed: _handleSignIn,
+      return Center(
+        child: Container(
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          color: Colors.black,
+          child: Container(
+            margin: EdgeInsets.fromLTRB(0, 0, 0, 70),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  MyFlutterApp.unnamed,
+                  size: 150,
+                  color: Colors.orange,
+                ),
+                SizedBox(
+                  height: 5,
+                ),
+                Text(
+                  "Password Manager",
+                  style: TextStyle(
+                      fontSize: 28,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "- created by kishore shiva",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                Container(
+                  margin: EdgeInsets.fromLTRB(0, 15, 0, 0),
+                  height: 0.0555 * MediaQuery.of(context).size.height,
+                  width: 0.75 * MediaQuery.of(context).size.width,
+                  child: RaisedButton(
+                    onPressed: _handleSignIn,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(40.0),
+                    ),
+                    color: Colors.white,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Container(
+                            height: 30,
+                            width: 30,
+                            child: Image.asset('assets/icon/google_logo.png')),
+                        Text(
+                          "  Sign in with google",
+                          style: TextStyle(fontSize: 16),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       );
     }
   }
@@ -870,7 +943,16 @@ class SignInDemoState extends State<SignInDemo> {
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           backgroundColor: Colors.black,
-          title: const Text("Kishore's Password Manager"),
+          title: Center(
+              child:
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(
+              MyFlutterApp.unnamed,
+              color: Colors.orange,
+              size: 32,
+            ),
+            Text(" Password Manager")
+          ])),
         ),
         body: ConstrainedBox(
             constraints: const BoxConstraints.expand(),
