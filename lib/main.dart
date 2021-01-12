@@ -50,6 +50,10 @@ class SignInDemoState extends State<SignInDemo> {
   static const IconData delete = IconData(0xe6a1, fontFamily: 'MaterialIcons');
   static const IconData edit = IconData(0xe6e5, fontFamily: 'MaterialIcons');
 
+  bool searching = false;
+  var websiteNames = [];
+  var websiteNameforedit = "";
+
   List<Widget> accountsContainer = [];
   final _formKey = GlobalKey<FormState>();
 
@@ -106,6 +110,8 @@ class SignInDemoState extends State<SignInDemo> {
                             onPressed: () {
                               print('this');
                               websiteText.text = a['website or account name'];
+                              this.websiteNameforedit =
+                                  a['website or account name'];
                               emailController.text = a['mail-id'];
                               username.text = a['username or card No'];
                               password.text = a['password or PIN'];
@@ -274,8 +280,8 @@ class SignInDemoState extends State<SignInDemo> {
                                         if (_formKey.currentState.validate()) {
                                           print("form validated");
                                           print(websiteText.text);
-                                          getDocumentId(websiteText.text).then(
-                                              (value) => _firestore
+                                          getDocumentId(websiteNameforedit)
+                                              .then((value) => _firestore
                                                       .collection(
                                                           _currentUser.email)
                                                       .document(value)
@@ -294,6 +300,7 @@ class SignInDemoState extends State<SignInDemo> {
                                                   }));
                                           print('document updated');
                                           Navigator.pop(context);
+                                          initState();
                                         } else {
                                           print("form invalid");
                                         }
@@ -429,6 +436,29 @@ class SignInDemoState extends State<SignInDemo> {
     }
   }
 
+  void searchData() async {
+    this.websiteNames = [];
+    final messages =
+        await _firestore.collection(_currentUser.email).getDocuments();
+    for (var message in messages.documents) {
+      print('------------' + 'message.data');
+      websiteNames.add(message.data);
+    }
+  }
+
+  void showSearchData(String websiteName) async {
+    this.accountsContainer = [];
+    for (var websitename in websiteNames) {
+      if (websitename['website or account name']
+          .contains(new RegExp(websiteName, caseSensitive: false))) {
+        generateContainers(websitename);
+        setState(() {
+          this.accountsContainer = accountsContainer;
+        });
+      }
+    }
+  }
+
   /** This function generate the Texts inside the orange box in accounts container by retuning a list of Texts **/
 
   List<Widget> generateContainerTexts(var a) {
@@ -499,9 +529,7 @@ class SignInDemoState extends State<SignInDemo> {
 
   @override
   void initState() {
-    loading = true;
     super.initState();
-    loading = true;
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount account) {
       setState(() {
         _currentUser = account;
@@ -509,6 +537,7 @@ class SignInDemoState extends State<SignInDemo> {
             _currentUser.email +
             '---------------------');
         showData(_currentUser.email);
+        searchData();
       });
     });
     _googleSignIn.signInSilently();
@@ -557,6 +586,8 @@ class SignInDemoState extends State<SignInDemo> {
 
   Future<void> _handleSignIn() async {
     try {
+      this.websiteNames = [];
+      _currentUser = null;
       await _googleSignIn.signIn();
     } catch (error) {
       print(error);
@@ -566,6 +597,7 @@ class SignInDemoState extends State<SignInDemo> {
   Future<void> _handleSignOut() {
     setState(() {
       _currentUser = null;
+      searching = false;
       _googleSignIn.disconnect();
     });
   }
@@ -798,6 +830,7 @@ class SignInDemoState extends State<SignInDemo> {
                                       emailController.text,
                                       additionalinformation.text);
                                   Navigator.pop(context);
+                                  initState();
                                 } else {
                                   print("form invalid");
                                 }
@@ -829,7 +862,7 @@ class SignInDemoState extends State<SignInDemo> {
                                 fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            "     Add Password",
+                            "     Add Credentials",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 22,
@@ -942,18 +975,68 @@ class SignInDemoState extends State<SignInDemo> {
         resizeToAvoidBottomPadding: false,
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          backgroundColor: Colors.black,
-          title: Center(
-              child:
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(
-              MyFlutterApp.unnamed,
-              color: Colors.orange,
-              size: 32,
-            ),
-            Text(" Password Manager")
-          ])),
-        ),
+            backgroundColor: Colors.black,
+            title: Center(
+                child: !searching
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                            Icon(
+                              MyFlutterApp.unnamed,
+                              color: Colors.orange,
+                              size: 32,
+                            ),
+                            Text(" Password Manager")
+                          ])
+                    : Container(
+                        margin: EdgeInsets.fromLTRB(0, 0, 0, 8),
+                        child: TextField(
+                          onChanged: (value) {
+                            print('------------- changed value is : ' +
+                                value +
+                                '----------------');
+                            showSearchData(value);
+                          },
+                          autofocus: true,
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                              contentPadding: EdgeInsets.fromLTRB(0, 5, 0, 0),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.orange),
+                              ),
+                              icon: Icon(Icons.search, color: Colors.white),
+                              hintText: "search here",
+                              hintStyle: TextStyle(color: Colors.white)),
+                        ))),
+            actions: !(_currentUser == null)
+                ? searching
+                    ? [
+                        IconButton(
+                            icon: Icon(
+                              Icons.cancel,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                searching = !searching;
+                                showData(_currentUser.email);
+                              });
+                            })
+                      ]
+                    : [
+                        IconButton(
+                            icon: Icon(
+                              Icons.search,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                searching = !searching;
+                                searchData();
+                              });
+                            })
+                      ]
+                : [Text('')]),
         body: ConstrainedBox(
             constraints: const BoxConstraints.expand(),
             child: Container(
